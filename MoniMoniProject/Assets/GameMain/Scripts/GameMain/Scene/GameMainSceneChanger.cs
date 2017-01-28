@@ -26,6 +26,7 @@ public class GameMainSceneChanger : MonoBehaviour
         {
             if (staging.flushStart())
             {
+                SceneInfoManager.instance.is_scenechange = true;
                 eventcreate.schoolEndReturnHouse();
                 SceneManager.LoadScene("Hunting");
             }
@@ -35,6 +36,7 @@ public class GameMainSceneChanger : MonoBehaviour
         {
             if (staging.flushStart())
             {
+                SceneInfoManager.instance.is_scenechange = true;
                 eventcreate.stateSave();
                 SceneManager.LoadScene("Hunting");
             }
@@ -42,6 +44,7 @@ public class GameMainSceneChanger : MonoBehaviour
 
         if (eventcreate.is_schoolbossend)
         {
+            SceneInfoManager.instance.is_scenechange = true;
             SceneManager.LoadScene("Ending");
         }
     }

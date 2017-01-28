@@ -7,6 +7,8 @@ using UnityEngine.SceneManagement;
 
 public class EndingTalkManager : MonoBehaviour
 {
+    [SerializeField]
+    Text endingroottext;
 
     [SerializeField]
     Text nametext;
@@ -15,10 +17,10 @@ public class EndingTalkManager : MonoBehaviour
     Image charaimage1;
     [SerializeField]
     Image charaimage2;
-    
+
 
     [SerializeField]
-    SpriteRenderer background;
+    Image background;
 
     [SerializeField]
     Button root1button;
@@ -427,8 +429,8 @@ public class EndingTalkManager : MonoBehaviour
         }
         drawchar = (GameObject)Instantiate(drawchar, talktext.transform);
 
-        drawchar.transform.position = talkcurrentpos;
-        drawchar.transform.localScale = new Vector3(1, 1, 1);
+        drawchar.transform.localPosition = talkcurrentpos;
+        drawchar.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
     }
 
     /// <summary>
@@ -441,8 +443,8 @@ public class EndingTalkManager : MonoBehaviour
             {
                 Destroy(child.gameObject);
             }
-
-        talkstartpos = talktext.transform.position;
+        talktext.transform.localPosition = new Vector3(0, -230, 0);
+        talkstartpos = Vector3.zero;
         talkcurrentpos = talkstartpos;
         fontsize = font_defaultsize;
         fontcolor = Color.black;
@@ -529,12 +531,15 @@ public class EndingTalkManager : MonoBehaviour
     AudioClip bgm_sound;
     [SerializeField]
     AudioClip doorclose_sound;
+    [SerializeField]
+    AudioClip overturn_se;
+
 
     [SerializeField]
     StagingController staging;
 
     int currentevent;
-    void eventModeUpdate()
+    void goodEndEventModeUpdate()
     {
         if (audiosource.isPlaying == false)
         {
@@ -553,18 +558,45 @@ public class EndingTalkManager : MonoBehaviour
             {
                 currentevent++;
             }
-            return;
         }
         if (currentevent == 1)
         {
-            if (staging.fadeInBlack())
+            endingroottext.gameObject.SetActive(true);
+            talkmode = TalkMode.NORMAL;
+            currentevent++;
+            return;
+        }
+    }
+
+    void hungryEndEventModeUpdate()
+    {
+        if (audiosource.isPlaying == false)
+        {
+            if (currentevent <= 1)
             {
-                talkmode = TalkMode.NORMAL;
-                currentevent++;
-                return;
+                audiosource.clip = bgm_sound;
+                audiosource.Play();
             }
         }
+        if (talkmode != TalkMode.EVENT) return;
 
+        if (currentevent == 0)
+        {
+            talkTextClear();
+            if (staging.fadeOutBlack())
+            {
+                audiosource.clip = overturn_se;
+                audiosource.Play();
+                currentevent++;
+            }
+        }
+        if (currentevent == 1)
+        {
+            endingroottext.gameObject.SetActive(true);
+            talkmode = TalkMode.NORMAL;
+            currentevent++;
+            return;
+        }
     }
 
     void Start()
@@ -579,7 +611,17 @@ public class EndingTalkManager : MonoBehaviour
         is_selectbuttonpush = true;
         sprites = Resources.LoadAll<Sprite>("Textures/Talk");
         audiosource = GetComponent<AudioSource>();
-        loadtextpath = "Ending";
+        if (SceneInfoManager.instance.endingstatus == SceneInfoManager.EndingStatus.GOOD_END)
+        {
+            loadtextpath = "GoodEnd";
+            endingroottext.text = "『 ED4　夢か現実か 』";
+        }
+        if (SceneInfoManager.instance.endingstatus == SceneInfoManager.EndingStatus.HUNGRY_END)
+        {
+            loadtextpath = "HungryEnd";
+            endingroottext.text = "『 ED1 餓死 』";
+        }
+
         var endingtext = Resources.Load<TextAsset>(loadtextpath);
 
         using (var sr = new StringReader(endingtext.text))
@@ -591,6 +633,7 @@ public class EndingTalkManager : MonoBehaviour
         audiosource.Play();
         talkTextClear();
         rootButtonSetup();
+        endingroottext.gameObject.SetActive(false);
     }
 
     void Update()
@@ -602,7 +645,14 @@ public class EndingTalkManager : MonoBehaviour
                 if (is_selectbuttonpush)
                     loadTalk(loadtextpath);
             }
-            eventModeUpdate();
+            if (SceneInfoManager.instance.endingstatus == SceneInfoManager.EndingStatus.GOOD_END)
+            {
+                goodEndEventModeUpdate();
+            }
+            if (SceneInfoManager.instance.endingstatus == SceneInfoManager.EndingStatus.HUNGRY_END)
+            {
+                hungryEndEventModeUpdate();
+            }
         }
     }
 }

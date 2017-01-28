@@ -7,6 +7,8 @@ using UnityEngine.SceneManagement;
 
 public class TalkManager : MonoBehaviour
 {
+    [SerializeField]
+    GameObject talkwindow;
 
     [SerializeField]
     Text nametext;
@@ -16,8 +18,15 @@ public class TalkManager : MonoBehaviour
     [SerializeField]
     Image charaimage2;
 
+    // 使う背景全部
     [SerializeField]
-    Sprite roombackground;
+    Sprite night_town;
+    [SerializeField]
+    Sprite room;
+    [SerializeField]
+    Sprite forest;
+    [SerializeField]
+    Sprite building;
 
     [SerializeField]
     Image background;
@@ -69,7 +78,7 @@ public class TalkManager : MonoBehaviour
     }
     void rootSelectSoundPlay()
     {
-        audiosource.Play();
+        se_audiosource.Play();
     }
 
     [SerializeField]
@@ -277,7 +286,7 @@ public class TalkManager : MonoBehaviour
 
                     // 色変えるコマンドが来たら通る
                     bool is_colorchange = false;
-                    Color changecolor = Color.white;
+                    Color changecolor = Color.black;
                     if (command.IndexOf("red") != -1)
                     {
                         changecolor = Color.red;
@@ -525,17 +534,30 @@ public class TalkManager : MonoBehaviour
         }
     }
 
-    AudioSource audiosource;
     [SerializeField]
-    AudioClip select_sound;
+    AudioSource bgm_audiosource;
+
     [SerializeField]
-    AudioClip bgm_sound;
+    AudioSource se_audiosource;
+
     [SerializeField]
-    AudioClip hungry_sound;
+    AudioClip select_se;
     [SerializeField]
-    AudioClip building_sound;
+    AudioClip forest_bgm;
     [SerializeField]
-    AudioClip doorclose_sound;
+    AudioClip hungry_se;
+    [SerializeField]
+    AudioClip building_bgm;
+
+    [SerializeField]
+    AudioClip footsteps_se;
+    [SerializeField]
+    AudioClip forest_se;
+
+    [SerializeField]
+    AudioClip doorclose_se;
+    [SerializeField]
+    AudioClip dooropen_se;
 
     [SerializeField]
     StagingController staging;
@@ -546,40 +568,42 @@ public class TalkManager : MonoBehaviour
 
     int currentevent;
 
-    void eventModeUpdate()
+    void prologueEventModeUpdate()
     {
-        if (audiosource.isPlaying == false)
+        if (bgm_audiosource.isPlaying == false)
         {
             if (currentevent <= 1)
             {
-                audiosource.clip = bgm_sound;
-                audiosource.Play();
+                bgm_audiosource.clip = forest_bgm;
+                bgm_audiosource.Play();
             }
             if (currentevent == 4)
             {
-                audiosource.clip = building_sound;
-                audiosource.Play();
+                bgm_audiosource.clip = building_bgm;
+                bgm_audiosource.Play();
             }
         }
         if (talkmode != TalkMode.EVENT) return;
 
+        // おなか鳴らす
         if (currentevent == 0)
         {
             talkTextClear();
-            audiosource.clip = hungry_sound;
-            audiosource.Play();
+            se_audiosource.clip = hungry_se;
+            se_audiosource.Play();
             talkmode = TalkMode.NORMAL;
+            talkwindow.SetActive(false);
             currentevent++;
             return;
         }
+
+        // おいしそうなにおいが漂う夜の街に移動
         if (currentevent == 1)
         {
-            talkTextClear();
+            talkwindow.SetActive(false);
             if (staging.fadeOutBlack())
             {
-                background.sprite = roombackground;
-                audiosource.clip = building_sound;
-                audiosource.Play();
+                background.sprite = night_town;
                 currentevent++;
             }
         }
@@ -592,21 +616,145 @@ public class TalkManager : MonoBehaviour
                 return;
             }
         }
+
+        // 森に移動
         if (currentevent == 3)
         {
-            talkTextClear();
-            audiosource.clip = doorclose_sound;
-            audiosource.Play();
+            talkwindow.SetActive(false);
+            if (staging.fadeOutBlack())
+            {
+                background.sprite = forest;
+                se_audiosource.clip = footsteps_se;
+                se_audiosource.Play();
+                currentevent++;
+            }
+        }
+        if (currentevent == 4)
+        {
+            if (staging.fadeInBlack())
+            {
+                talkmode = TalkMode.NORMAL;
+                currentevent++;
+                return;
+            }
+        }
+
+        // 森がざわつく音
+        if (currentevent == 5)
+        {
+            talkwindow.SetActive(false);
+            se_audiosource.clip = forest_se;
+            se_audiosource.Play();
             talkmode = TalkMode.NORMAL;
             currentevent++;
             return;
         }
-        if (currentevent == 4)
+
+        // おなかを鳴らす
+        if (currentevent == 6)
+        {
+            talkTextClear();
+            se_audiosource.clip = hungry_se;
+            se_audiosource.Play();
+            talkmode = TalkMode.NORMAL;
+            talkwindow.SetActive(false);
+            currentevent++;
+            return;
+        }
+
+        // 怪しげな洋館外観を見に行く
+        if (currentevent == 7)
+        {
+            talkwindow.SetActive(false);
+            if (staging.fadeOutBlack())
+            {
+                background.sprite = building;
+                se_audiosource.clip = footsteps_se;
+                se_audiosource.Play();
+                currentevent++;
+            }
+        }
+        if (currentevent == 8)
+        {
+            if (staging.fadeInBlack())
+            {
+                talkmode = TalkMode.NORMAL;
+                currentevent++;
+                return;
+            }
+        }
+
+        // 館に移動
+        if (currentevent == 9)
+        {
+            talkwindow.SetActive(false);
+            if (staging.fadeOutBlack())
+            {
+                background.sprite = room;
+                bgm_audiosource.clip = building_bgm;
+                bgm_audiosource.Play();
+                se_audiosource.clip = dooropen_se;
+                se_audiosource.Play();
+                currentevent++;
+            }
+        }
+        if (currentevent == 10)
+        {
+            if (staging.fadeInBlack())
+            {
+                talkmode = TalkMode.NORMAL;
+                currentevent++;
+                return;
+            }
+        }
+        // ドアが閉まる
+        if (currentevent == 11)
+        {
+            talkTextClear();
+            se_audiosource.clip = doorclose_se;
+            se_audiosource.Play();
+            talkmode = TalkMode.NORMAL;
+            currentevent++;
+            return;
+        }
+
+        // ゲームメインに飛ぶ
+        if (currentevent == 12)
+        {
+            if (staging.fadeOutBlack())
+            {
+                nowloadingtexture.SetActive(true);
+                talkmode = TalkMode.NORMAL;
+                currentevent++;
+                SceneManager.LoadScene("GameMain");
+                return;
+            }
+        }
+
+
+
+    }
+
+    void prologue2EventModeUpdate()
+    {
+        if (bgm_audiosource.isPlaying == false)
+        {
+            if (currentevent <= 1)
+            {
+                bgm_audiosource.clip = building_bgm;
+                bgm_audiosource.Play();
+            }
+        }
+
+        if (talkmode != TalkMode.EVENT) return;
+
+        // 経緯を話す
+        if (currentevent == 0)
         {
             var color = background.color;
-            color.r -= 0.01f;
-            color.g -= 0.01f;
-            color.b -= 0.01f;
+            color.r -= 0.03f;
+            color.g -= 0.03f;
+            color.b -= 0.03f;
             background.color = color;
             if (color.r <= 0)
             {
@@ -615,12 +763,13 @@ public class TalkManager : MonoBehaviour
                 return;
             }
         }
-        if (currentevent == 5)
+
+        if (currentevent == 1)
         {
             var color = background.color;
-            color.r += 0.01f;
-            color.g += 0.01f;
-            color.b += 0.01f;
+            color.r += 0.03f;
+            color.g += 0.03f;
+            color.b += 0.03f;
             background.color = color;
             if (color.r >= 1.0f)
             {
@@ -629,21 +778,8 @@ public class TalkManager : MonoBehaviour
                 return;
             }
         }
-        if (currentevent == 6)
-        {
-            var color = background.color;
-            color.r -= 0.01f;
-            color.g -= 0.01f;
-            color.b -= 0.01f;
-            background.color = color;
-            if (color.r <= 0)
-            {
-                talkmode = TalkMode.NORMAL;
-                currentevent++;
-                return;
-            }
-        }
-        if (currentevent == 7)
+        // ゲームメインに飛ぶ
+        if (currentevent == 2)
         {
             if (staging.fadeOutBlack())
             {
@@ -656,6 +792,7 @@ public class TalkManager : MonoBehaviour
         }
     }
 
+
     void Start()
     {
         is_talknow = false;
@@ -666,8 +803,20 @@ public class TalkManager : MonoBehaviour
         is_talknow = false;
         is_selectbuttonpush = true;
         sprites = Resources.LoadAll<Sprite>("Textures/Talk");
-        audiosource = GetComponent<AudioSource>();
-        loadtextpath = "Prologue";
+
+        if (SceneInfoManager.instance.is_tutorial)
+        {
+            bgm_audiosource.clip = forest_bgm;
+            bgm_audiosource.Play();
+            loadtextpath = "Prologue";
+        }
+        else
+        {
+            bgm_audiosource.clip = building_bgm;
+            bgm_audiosource.Play();
+            loadtextpath = "Prologue2";
+            background.sprite = room;
+        }
 
         var scenariotext = Resources.Load<TextAsset>("TextData/" + loadtextpath);
 
@@ -677,8 +826,7 @@ public class TalkManager : MonoBehaviour
         }
         loadTalk(loadtextpath);
         currentevent = 0;
-        audiosource.clip = bgm_sound;
-        audiosource.Play();
+
         talkTextClear();
     }
 
@@ -689,9 +837,17 @@ public class TalkManager : MonoBehaviour
             if (Input.GetMouseButtonUp(0))
             {
                 if (is_selectbuttonpush)
+                {
+                    talkwindow.SetActive(true);
                     loadTalk(loadtextpath);
+                }
             }
-            eventModeUpdate();
+            if (SceneInfoManager.instance.is_tutorial)
+                prologueEventModeUpdate();
+            else
+            {
+                prologue2EventModeUpdate();
+            }
 
             if (Input.GetKey(KeyCode.Return))
             {

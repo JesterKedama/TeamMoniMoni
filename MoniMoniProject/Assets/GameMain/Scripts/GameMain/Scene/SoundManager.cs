@@ -107,7 +107,8 @@ public class SoundManager : MonoBehaviour
     // BGM停止  
     public void StopBGM()
     {
-        BGMsource.Stop(); BGMsource.clip = null;
+        BGMsource.Stop();
+        BGMsource.clip = null;
     }
     // ***** SE再生 *****  
     // SE再生  

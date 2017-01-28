@@ -6,5 +6,5 @@
 …よく見るとキャンパスの端に[p]
 何か書かれている。[n]
 
- 『[size'start'][red'start']　た　す　け　て　[size'end'][red'end']』[n]
+ 『[size'start'] [red'start']　た　す　け　て　[size'end'] [red'end']』[n]
  [end]

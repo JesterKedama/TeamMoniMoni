@@ -16,6 +16,7 @@ public class MoveButtonController : MonoBehaviour
 
     int buttonstatus;
     int current_buttonstatus;
+    bool is_pressbutton; // ボタンが押されているかどうか
 
     Vector2 up;
     Vector2 down;
@@ -33,6 +34,7 @@ public class MoveButtonController : MonoBehaviour
 
         buttonradius = gameObject.GetComponent<RectTransform>().sizeDelta.x / 2;
 
+        is_pressbutton = false;
 
         up = new Vector2(0, 1.0f);
         down = new Vector2(0, -1.0f);
@@ -48,6 +50,7 @@ public class MoveButtonController : MonoBehaviour
             gameObject.GetComponent<Image>().sprite = System.Array.Find<Sprite>(
                                 buttonsprites, (sprite) => sprite.name.Equals(
                                     "MoveButton_0"));
+            is_pressbutton = false;
         }
 
         var vec = getButtonPushVec();
@@ -111,8 +114,9 @@ public class MoveButtonController : MonoBehaviour
         mousepos = Input.mousePosition;
         Vector2 buttonpos = transform.position;
         Vector2 push_pos = Vector2.zero;
-
-        if (!pointToCircle(buttonpos, buttonradius, mousepos)) return push_pos;
+        if (is_pressbutton == false)
+            if (!pointToCircle(buttonpos, buttonradius, mousepos)) return push_pos;
+        is_pressbutton = true;
         Vector2 push_range = mousepos - buttonpos;
 
         float push_angle = Mathf.Atan2(push_range.x, push_range.y);

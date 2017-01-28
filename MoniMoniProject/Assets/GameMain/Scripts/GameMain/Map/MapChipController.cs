@@ -207,19 +207,21 @@ public class MapChipController : MonoBehaviour
                         }
                     }
                 }
-
-                var block = blockcomponents[eventlayer]
+                if (isOutOfRange(player_cell_x, player_cell_y) == false)
+                {
+                    var block = blockcomponents[eventlayer]
                     [player_cell_y]
                     [player_cell_x];
 
-                if (block.number != -1)
-                {
-                    if (overLapEventExists(player_cell_x, player_cell_y))
+                    if (block.number != -1)
                     {
-                        eventplayer_cell_x = player_cell_x;
-                        eventplayer_cell_y = player_cell_y;
-                        is_eventstart = block.event_manager.eventExecution();
-                        player_controller.state = PlayerController.State.EVENT;
+                        if (overLapEventExists(player_cell_x, player_cell_y))
+                        {
+                            eventplayer_cell_x = player_cell_x;
+                            eventplayer_cell_y = player_cell_y;
+                            is_eventstart = block.event_manager.eventExecution();
+                            player_controller.state = PlayerController.State.EVENT;
+                        }
                     }
                 }
             }

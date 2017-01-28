@@ -14,6 +14,13 @@ public class NightMareController : MonoBehaviour
     public bool can_capture = false;
     public int can_capture_count;
 
+    [SerializeField]
+    RuntimeAnimatorController week_animator;
+
+    public void animationChange()
+    {
+        GetComponent<Animator>().runtimeAnimatorController = week_animator;
+    }
 
     void Start()
     {

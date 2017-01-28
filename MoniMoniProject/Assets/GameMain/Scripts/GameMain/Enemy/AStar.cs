@@ -95,7 +95,7 @@ public class AStar : MonoBehaviour
 
         public Node getNode(int x_, int y_)
         {
-            var index = map.blocks[(int)LayerController.Layer.FLOOR][y_][x_].GetComponent<Block>().index;
+            var index = map.blocks[(int)LayerController.Layer.FLOOR] [y_] [x_].GetComponent<Block>().index;
             if (nodedic.ContainsKey(index))
             {
                 return nodedic[index];
@@ -123,7 +123,7 @@ public class AStar : MonoBehaviour
             if (map.isOutOfRange(x_, y_))
                 return null;
 
-            int wallnum = map.blocks[(int)LayerController.Layer.WALL][y_][x_].GetComponent<Block>().number;
+            int wallnum = map.blocks[(int)LayerController.Layer.WALL] [y_] [x_].GetComponent<Block>().number;
             if (wallnum != -1)
                 return null;
 

@@ -43,7 +43,12 @@ public class EnemyManager : MonoBehaviour
         else
         {
             nightmare.gameObject.SetActive(true);
-            enemy_num = SceneInfoManager.instance.enemy_num;
+
+            if (mapchip.select_stage_name == "School")
+                enemy_num = SceneInfoManager.instance.school_enemy_num;
+            else if (mapchip.select_stage_name == "Hospital")
+                enemy_num = SceneInfoManager.instance.hospital_enemy_num;
+
             dreamersPop(enemy_num);
             nightmareAI.aiSetup();
         }
@@ -74,7 +79,9 @@ public class EnemyManager : MonoBehaviour
     {
         if (selectnum_ == 2)
         {
+            nightmare.animationChange();
             nightmareAI.state = EnemyAI.State.ROOT_CHANGE;
+            nightmareAI.can_move = true;
             for (int i = 0; i < enemy_num; i++)
             {
                 Destroy(enemys[i]);
@@ -83,7 +90,6 @@ public class EnemyManager : MonoBehaviour
             nightmare.is_move = true;
             nightmare.prev_cell = nightmare.retCell();
             enemy_num = 0;
-            SceneInfoManager.instance.enemy_num = 0;
         }
     }
 
@@ -103,6 +109,22 @@ public class EnemyManager : MonoBehaviour
             if (pointToCircle(player.transform.position, 0.3f, enemys[i].transform.position))
             {
                 is_enemy_hit = true;
+            }
+        }
+
+        if (player.state == PlayerController.State.EVENT ||
+            player.state == PlayerController.State.TALK)
+        {
+            for (int i = 0; i < enemy_num; i++)
+            {
+                enemys[i].GetComponent<EnemyAI>().can_move = false;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < enemy_num; i++)
+            {
+                enemys[i].GetComponent<EnemyAI>().can_move = true;
             }
         }
     }

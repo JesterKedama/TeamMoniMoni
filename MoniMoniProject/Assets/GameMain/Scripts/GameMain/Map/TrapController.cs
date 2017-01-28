@@ -71,12 +71,12 @@ public class TrapController : MonoBehaviour
                 if (talkmanager.is_talknow == false)
                 {
                     var direction = talkmanager.selectbuttonnum - 1;    //1から始まるので、1引く
-                    var temptrap = trap_repository[player.have_item_name][direction];
+                    var temptrap = trap_repository[player.have_item_name] [direction];
                     int x = mapchip.select_cell_x, y = mapchip.select_cell_y;
 
                     var trap = Resources.Load<GameObject>("Prefabs/Trap");
                     trap.GetComponent<SpriteRenderer>().sprite = temptrap.sprite;
-                    trap.transform.position = mapchip.blocks[(int)LayerController.Layer.EVENT][y][x].transform.position + new Vector3(0,0,-0.1f);
+                    trap.transform.position = mapchip.blocks[(int)LayerController.Layer.EVENT] [y] [x].transform.position + new Vector3(0,0,-0.1f);
                     trap.transform.localScale = new Vector2(mapchip.chip_scale, mapchip.chip_scale);
 
                     trap.GetComponent<Trap>().trap_active_time = temptrap.trap_active_time;
@@ -143,7 +143,7 @@ public class TrapController : MonoBehaviour
     public void eventPutTrap(string trap_name_, int trap_active_time_, int x, int y)
     {
         var trap = Resources.Load<GameObject>("Prefabs/Trap");
-        trap.transform.position = mapchip.blocks[(int)LayerController.Layer.EVENT][y][x].transform.position + new Vector3(0, 0, -0.1f); ;
+        trap.transform.position = mapchip.blocks[(int)LayerController.Layer.EVENT] [y] [x].transform.position + new Vector3(0, 0, -0.1f); ;
         trap.transform.localScale = new Vector2(mapchip.chip_scale, mapchip.chip_scale);
 
         trap.GetComponent<SpriteRenderer>().sprite = null;

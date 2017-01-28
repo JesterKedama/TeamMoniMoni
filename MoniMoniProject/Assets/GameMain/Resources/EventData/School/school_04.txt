@@ -1,0 +1,4 @@
+﻿[text]
+#ヴィーバ#[chara'vi-ba焦']
+[size'start'] うわぁ!?何だ、これ！[size'end'] [n]
+[end]

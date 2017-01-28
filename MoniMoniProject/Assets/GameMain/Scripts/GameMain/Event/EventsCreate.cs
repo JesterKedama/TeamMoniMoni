@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// イベントたちを作るクラス
@@ -41,41 +42,87 @@ public class EventsCreate : MonoBehaviour
     [SerializeField]
     TrapController trapcontroller;
 
+    [SerializeField]
+    GameObject viba_button;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  シーン切り替えするときに呼ばれる関数                                                                                               //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // ドリーマーを捕まえるときに状態を保存する関数
     public void stateSave()
     {
+        SoundManager.Instance.StopBGM();
         SceneInfoManager.instance.player_pos = player.transform.position;
+        SceneInfoManager.instance.have_item_name = playercontroller.have_item_name;
+
         SceneInfoManager.instance.select_map_name = chipcontroller.select_map_name;
         SceneInfoManager.instance.select_stage_name = chipcontroller.select_stage_name;
-        SceneInfoManager.instance.enemy_num = enemymanager.enemy_num;
-        if (SceneInfoManager.instance.enemy_num > 0)
-            SceneInfoManager.instance.enemy_num--;
-        SceneInfoManager.instance.endingstatus = SceneInfoManager.EndingStatus.DEFAULT;
+        if (chipcontroller.select_stage_name == "School")
+        {
+            SceneInfoManager.instance.school_enemy_num = enemymanager.enemy_num;
+            if (SceneInfoManager.instance.school_enemy_num > 0)
+                SceneInfoManager.instance.school_enemy_num--;
+        }
+        else if (chipcontroller.select_stage_name == "Hospital")
+        {
+            SceneInfoManager.instance.hospital_enemy_num = enemymanager.enemy_num;
+            if (SceneInfoManager.instance.hospital_enemy_num > 0)
+                SceneInfoManager.instance.hospital_enemy_num--;
+        }
+
     }
 
+    // 学校のボス倒して帰ってくる関数
     public void schoolEndReturnHouse()
     {
+        SoundManager.Instance.StopBGM();
         SceneInfoManager.instance.player_pos = new Vector3();
         SceneInfoManager.instance.select_map_name = "House1F";
         SceneInfoManager.instance.select_stage_name = "Videl";
-        SceneInfoManager.instance.enemy_num = 0;
-        SceneInfoManager.instance.endingstatus = SceneInfoManager.EndingStatus.SCHOOL_END;
+        SceneInfoManager.instance.is_shoolclear = true;
+
+        //// ここをのちに病院の条件も追加する
+        //if (SceneInfoManager.instance.school_enemy_num <= 0)
+        ////&&SceneInfoManager.instance.hospital_enemy_num <= 0) 
+        //{
+        //    SceneInfoManager.instance.endingstatus = SceneInfoManager.EndingStatus.GOOD_END;
+        //}
+        //else
+        //{
+        //    SceneInfoManager.instance.endingstatus = SceneInfoManager.EndingStatus.HUNGRY_END;
+        //}
     }
 
-    void schoolEndSetup()
+    public void tutorialEndScenarioChange()
     {
-        if (SceneInfoManager.instance.endingstatus != SceneInfoManager.EndingStatus.SCHOOL_END) return;
-        eventrepository.houseEndEventSetup();
-        eventloader.eventRegister();
+        SoundManager.Instance.StopBGM();
+        SceneInfoManager.instance.select_map_name = "House1FCenter";
+        SceneInfoManager.instance.select_stage_name = "Videl";
+        SceneInfoManager.instance.is_tutorial = false;
+        SceneInfoManager.instance.is_tutorial_end = true;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //  セットアップ                                                                                                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    void tutorialReturnSetup()
+    {
+        if (SceneInfoManager.instance.is_tutorial_end)
+        {
+            tutorialReturnToRoom();
+            SceneInfoManager.instance.is_tutorial_end = false;
+        }
+        if (SceneInfoManager.instance.is_tutorial == false)
+            viba_button.SetActive(true);
+
+    }
     void Start()
     {
+        SceneInfoManager.instance.is_scenechange = false;
+        tutorialReturnSetup();
         schoolBlackOutEventSetup();
-        schoolEndSetup();
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,17 +130,28 @@ public class EventsCreate : MonoBehaviour
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void Update()
     {
-        if (is_roommove)
-            if (staging.fadeInBlack())
-            {
-                is_roommove = false;
-            }
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            eventrepository.houseEndEventSetup();
-            eventloader.eventRegister();
-        }
+        bgmUpdate();
+        roomMoveUpdate();
         schoolBlackOutEvent();
+    }
+
+    void bgmUpdate()
+    {
+
+        if (chipcontroller.select_stage_name == "Videl")
+        {
+            SoundManager.Instance.volume.BGM = 0.2f;
+            SoundManager.Instance.PlayBGM(0);
+        }
+        if (chipcontroller.select_stage_name == "School")
+        {
+            SoundManager.Instance.volume.BGM = 0.2f;
+            SoundManager.Instance.PlayBGM(1);
+        }
+        if (SceneInfoManager.instance.is_scenechange)
+        {
+            SoundManager.Instance.StopBGM();
+        }
     }
 
     int upcount = 0;
@@ -227,8 +285,12 @@ public class EventsCreate : MonoBehaviour
             if (blackoutcount > blackoutstartcount &&
                 is_setup == false)
             {
-                talkmanager.startTalk("school_10");
+                talkmanager.startTalk("School/school_10");
+
+                stagemoveeventcanvas.SetActive(true);
                 blackout_background.gameObject.SetActive(true);
+                blackout_background.color = new Color(0, 0, 0);
+
                 is_blackout = true;
                 is_setup = true;
             }
@@ -248,7 +310,10 @@ public class EventsCreate : MonoBehaviour
             {
                 SoundManager.Instance.PlaySE(0);
 
+                blackout_background.color = new Color(255, 255, 255);
+                stagemoveeventcanvas.SetActive(false);
                 blackout_background.gameObject.SetActive(false);
+
                 talkmanager.talkmode = EventTalkManager.TalkMode.NORMAL;
             }
         }
@@ -271,7 +336,7 @@ public class EventsCreate : MonoBehaviour
             if (is_setup == false)
             {
                 stagemoveeventcanvas.SetActive(true);
-                talkmanager.startTalk("school_scenario");
+                talkmanager.startTalk("School/school_scenario");
                 is_setup = true;
             }
             playercontroller.state = PlayerController.State.TALK;
@@ -302,7 +367,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_01");
+            talkmanager.startTalk("School/school_01");
             is_setup = true;
         }
         playercontroller.state = PlayerController.State.TALK;
@@ -317,7 +382,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_02");
+            talkmanager.startTalk("School/school_02");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -331,7 +396,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_03");
+            talkmanager.startTalk("School/school_03");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -365,7 +430,7 @@ public class EventsCreate : MonoBehaviour
         else if (zombiecount == 60 * 2 + 1)
         {
             player.transform.Translate(0, 1, 0);
-            talkmanager.startTalk("school_04");
+            talkmanager.startTalk("School/school_04");
             playercontroller.state = PlayerController.State.TALK;
         }
 
@@ -376,17 +441,17 @@ public class EventsCreate : MonoBehaviour
     }
     public int schoolEvent05()
     {
-        return talkNextEvent("school_05");
+        return talkNextEvent("School/school_05");
     }
     public int schoolEvent05_3()
     {
-        return talkEvent("school_05-3");
+        return talkEvent("School/school_05-3");
     }
     public int schoolEvent06()
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_06");
+            talkmanager.startTalk("School/school_06");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -400,7 +465,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_06-1");
+            talkmanager.startTalk("School/school_06-1");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -410,13 +475,13 @@ public class EventsCreate : MonoBehaviour
     }
     public int schoolEvent07()
     {
-        return talkNextEvent("school_07");
+        return talkNextEvent("School/school_07");
     }
     public int schoolEvent07_2()
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_07-2");
+            talkmanager.startTalk("School/school_07-2");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -428,7 +493,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_08");
+            talkmanager.startTalk("School/school_08");
             is_setup = true;
         }
         if (talkmanager.talkmode == EventTalkManager.TalkMode.EVENT &&
@@ -445,13 +510,13 @@ public class EventsCreate : MonoBehaviour
     }
     public int schoolEvent08_2()
     {
-        return talkEvent("school_08-2");
+        return talkEvent("School/school_08-2");
     }
     public int schoolEvent09()//------------------------------------------------------------------------------------
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_09");
+            talkmanager.startTalk("School/school_09");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -463,7 +528,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_09-2");
+            talkmanager.startTalk("School/school_09-2");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -475,7 +540,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_11");
+            talkmanager.startTalk("School/school_11");
             is_setup = true;
         }
         if (talkmanager.talkmode == EventTalkManager.TalkMode.EVENT &&
@@ -499,37 +564,37 @@ public class EventsCreate : MonoBehaviour
     }
     public int schoolEvent11_2()
     {
-        return talkNextEvent("school_11-2");
+        return talkNextEvent("School/school_11-2");
     }
     public int schoolEvent11_3()
     {
-        return talkEvent("school_11-3");
+        return talkEvent("School/school_11-3");
     }
     public int schoolEvent12()
     {
-        return talkEvent("school_12");
+        return talkEvent("School/school_12");
     }
     public int schoolEvent13()
     {
-        return talkEvent("school_13");
+        return talkEvent("School/school_13");
     }
     public int schoolEvent14()
     {
-        return talkNextEvent("school_14");
+        return talkNextEvent("School/school_14");
     }
     public int schoolEvent14_2()
     {
-        return talkNextEvent("school_14-2");
+        return talkNextEvent("School/school_14-2");
     }
     public int schoolEvent14_3()
     {
-        return talkEvent("school_14-3");
+        return talkEvent("School/school_14-3");
     }
     public int schoolEvent15()//-------------------------------------------------------------------------------------
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_15");
+            talkmanager.startTalk("School/school_15");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -541,7 +606,7 @@ public class EventsCreate : MonoBehaviour
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_16");
+            talkmanager.startTalk("School/school_16");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -551,25 +616,25 @@ public class EventsCreate : MonoBehaviour
     }
     public int schoolEvent17()
     {
-        return talkEvent("school_17");
+        return talkEvent("School/school_17");
     }
     public int schoolEvent18()
     {
-        return talkEvent("school_18");
+        return talkEvent("School/school_18");
     }//-------------------------------------------------------------------------------------------
     public int schoolEvent19()
     {
-        return talkEvent("school_19");
+        return talkEvent("School/school_19");
     }
     public int schoolEvent20()
     {
-        return talkNextEvent("school_20");
+        return talkNextEvent("School/school_20");
     }
     public int schoolEvent20_2()//------------------------------------------------------------------------------------------
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_20_2");
+            talkmanager.startTalk("School/school_20_2");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -579,13 +644,13 @@ public class EventsCreate : MonoBehaviour
     }
     public int schoolEvent21()
     {
-        return talkEvent("school_21");
+        return talkEvent("School/school_21");
     }
     public int schoolEvent22()//----------------------------------------------------------------------------------------------
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("school_22");
+            talkmanager.startTalk("School/school_22");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -610,12 +675,18 @@ public class EventsCreate : MonoBehaviour
             {
                 if (is_setup == false)
                 {
-                    talkmanager.startTalk("school_23");
+                    talkmanager.startTalk("School/school_23");
                     is_setup = true;
+                }
+                if (talkmanager.talkmode == EventTalkManager.TalkMode.EVENT &&
+                     talkmanager.event_call_count >= 1)
+                {
+                    talkmanager.talkmode = EventTalkManager.TalkMode.NORMAL;
                 }
                 if (talkmanager.is_talknow)
                     return 0;
-                enemymanager.nightmareRePop(talkmanager.selectbuttonnum);
+                if (talkmanager.selectbuttonnum == 2)
+                    enemymanager.nightmareRePop(talkmanager.selectbuttonnum);
                 is_setup = false;
                 staging.flushcount = 0;
                 return 1;
@@ -640,6 +711,19 @@ public class EventsCreate : MonoBehaviour
     int event_layer = (int)LayerController.Layer.EVENT;
 
 
+    void roomMoveUpdate()
+    {
+        if (is_roommove)
+            if (staging.fadeInBlack())
+            {
+                is_roommove = false;
+            }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            eventrepository.houseEndEventSetup();
+            eventloader.eventRegister();
+        }
+    }
 
     /// <summary>
     /// プレイヤーを引数で渡したイベントのマスに移動させる関数
@@ -688,9 +772,30 @@ public class EventsCreate : MonoBehaviour
         return false;
     }
 
-    public int houseEvent02()//-------------------------------------------------------------------------------
+    public int houseEvent02()
     {
-        return talkEvent("home_2");
+        if (SceneInfoManager.instance.endingstatus != SceneInfoManager.EndingStatus.NOT_END)
+        {
+            if (is_setup == false)
+            {
+                talkmanager.startTalk("Home/homeExit");
+                is_setup = true;
+            }
+            if (talkmanager.is_talknow)
+                return 0;
+            if (talkmanager.selectbuttonnum == 1)
+            {
+                if (staging.fadeOutBlack())
+                {
+                    SoundManager.Instance.StopBGM();
+                    SceneManager.LoadScene("Ending");
+                    is_setup = false;
+                    return 1;
+                }
+                return 0;
+            }
+        }
+        return talkEvent("Home/home_2");
     }
 
     bool is_roommove = false;
@@ -710,9 +815,18 @@ public class EventsCreate : MonoBehaviour
             }
         return 0;
     }
+    // チュートリアルシナリオから帰ってきたときに呼ばれる関数
+    void tutorialReturnToRoom()
+    {
+        chipcontroller.mapChange("House1FCenter", "Videl");
+        eventloader.eventRegister();
+        roomMoveToPlayer(7);
+        is_roommove = true;
+    }
 
     public int houseEvent03()
     {
+        if (SceneInfoManager.instance.is_tutorial == true) return 1;
         return moveToRoom("House1FLeft", 3);
     }
     public int houseEvent04()
@@ -721,14 +835,29 @@ public class EventsCreate : MonoBehaviour
     }
     public int houseEvent05()
     {
+        if (SceneInfoManager.instance.is_tutorial == true) return 1;
         return moveToRoom("House1FRight", 5);
     }
     public int houseEvent06()
     {
         return moveToRoom("House1F", 4);
     }
+    /// <summary>
+    /// 一番最初に書斎に入る時にチュートリアルを終了する
+    /// </summary>
     public int houseEvent07()
     {
+        if (SceneInfoManager.instance.is_tutorial)
+        {
+            int event_state = moveToRoom("House1FCenter", 7);
+            if (event_state == 1)
+            {
+                tutorialEndScenarioChange();
+                SceneManager.LoadScene("Scenario");
+                return 1;
+            }
+            return event_state;
+        }
         return moveToRoom("House1FCenter", 7);
     }
     public int houseEvent08()
@@ -754,15 +883,15 @@ public class EventsCreate : MonoBehaviour
 
     public int houseEvent13()
     {
-        return talkEvent("home_13");
+        return talkEvent("Home/home_13");
     }//-------------------------------------------------------------------------------------
     public int houseEvent14()
     {
-        return talkEvent("home_14");
+        return talkEvent("Home/home_14");
     }//-------------------------------------------------------------------------------------
     public int houseEvent15()
     {
-        return talkEvent("home_15");
+        return talkEvent("Home/home_15");
     }//-------------------------------------------------------------------------------------
 
     public int houseEvent16()
@@ -785,14 +914,14 @@ public class EventsCreate : MonoBehaviour
     //-------------------------------------------------------------------------------------
     public int houseEvent20()//-------------------------------------------------------------------------------------
     {
-        return talkEvent("home_20");
+        return talkEvent("Home/home_20");
     }
 
     public int houseEvent21()
     {
         if (is_setup == false)
         {
-            talkmanager.startTalk("home_21");
+            talkmanager.startTalk("Home/home_21");
             is_setup = true;
         }
         if (talkmanager.is_talknow)
@@ -818,222 +947,261 @@ public class EventsCreate : MonoBehaviour
     }
     public int houseEvent22()
     {
-        return talkEvent("home_22");
+        return talkEvent("Home/home_22");
     }
     public int houseEvent22_2()
     {
-        return talkEvent("home_22-2");
+        return talkEvent("Home/home_22-2");
     }
     public int houseEvent23()
     {
-        return talkEvent("home_23");
+        return talkEvent("Home/home_23");
     }
     public int houseEvent24()
     {
-        return talkEvent("home_24");
+        return talkEvent("Home/home_24");
     }
     public int houseEvent25()
     {
-        return talkEvent("home_25");
+        return talkEvent("Home/home_25");
     }
     public int houseEvent25_2()
     {
-        return talkEvent("home_25-2");
+        return talkEvent("Home/home_25-2");
     }
     public int houseEvent26()
     {
-        return talkEvent("home_26");
+        return talkEvent("Home/home_26");
     }
     public int houseEvent26_2()
     {
-        return talkEvent("home_26-2");
+        return talkEvent("Home/home_26-2");
     }
     public int houseEvent27()
     {
-        return talkEvent("home_27");
+        return talkEvent("Home/home_27");
     }
     public int houseEvent27_2()
     {
-        return talkEvent("home_27-2");
+        return talkEvent("Home/home_27-2");
     }
     public int houseEvent28()
     {
-        return talkEvent("home_28");
+        return talkEvent("Home/home_28");
     }
     public int houseEvent28_2()
     {
-        return talkEvent("home_28-2");
+        return talkEvent("Home/home_28-2");
     }
     public int houseEvent29()
     {
-        return talkEvent("home_29");
+        return talkEvent("Home/home_29");
     }
     public int houseEvent29_2()
     {
-        return talkEvent("home_29-2");
+        return talkEvent("Home/home_29-2");
     }
     public int houseEvent30()
     {
-        return talkEvent("home_30");
+        return talkEvent("Home/home_30");
     }
     public int houseEvent31()
     {
-        return talkEvent("home_31");
+        return talkEvent("Home/home_31");
     }
     public int houseEvent31_2()
     {
-        return talkEvent("home_31-2");
+        return talkEvent("Home/home_31-2");
     }
     public int houseEvent32()
     {
-        return talkEvent("home_32");
+        return talkEvent("Home/home_32");
     }
     public int houseEvent32_2()
     {
-        return talkEvent("home_32-2");
+        return talkEvent("Home/home_32-2");
     }
     public int houseEvent33()
     {
-        return talkEvent("home_33");
+        return talkEvent("Home/home_33");
     }
     public int houseEvent33_2()
     {
-        return talkEvent("home_33-2");
+        return talkEvent("Home/home_33-2");
     }
     public int houseEvent34()
     {
-        return talkEvent("home_34");
+        return talkEvent("Home/home_34");
     }
     public int houseEvent34_2()
     {
-        return talkEvent("home_34-2");
+        return talkEvent("Home/home_34-2");
     }
     public int houseEvent35()
     {
-        return talkEvent("home_35");
+        return talkEvent("Home/home_35");
     }
     public int houseEvent35_2()
     {
-        return talkEvent("home_35-2");
+        return talkEvent("Home/home_35-2");
     }
     public int houseEvent36()
     {
-        return talkEvent("home_36");
+        return talkEvent("Home/home_36");
     }
     public int houseEvent36_2()
     {
-        return talkEvent("home_36-2");
+        return talkEvent("Home/home_36-2");
     }
     public int houseEvent37()
     {
-        return talkEvent("home_37");
+        return talkEvent("Home/home_37");
     }
     public int houseEvent37_2()
     {
-        return talkEvent("home_37-2");
+        return talkEvent("Home/home_37-2");
     }
     public int houseEvent38()
     {
-        return talkEvent("home_38");
+        return talkEvent("Home/home_38");
     }
     public int houseEvent38_2()
     {
-        return talkEvent("home_38-2");
+        return talkEvent("Home/home_38-2");
     }
     public int houseEvent39()
     {
-        return talkEvent("home_39");
+        return talkEvent("Home/home_39");
     }
     public int houseEvent39_2()
     {
-        return talkEvent("home_39-2");
+        return talkEvent("Home/home_39-2");
     }
     public int houseEvent40()
     {
-        return talkEvent("home_40");
+        return talkEvent("Home/home_40");
     }
     public int houseEvent41()
     {
-        return talkEvent("home_41");
+        return talkEvent("Home/home_41");
     }
     public int houseEvent41_2()
     {
-        return talkEvent("home_41-2");
+        return talkEvent("Home/home_41-2");
     }
     public int houseEvent42()
     {
-        return talkEvent("home_42");
+        return talkEvent("Home/home_42");
     }
     public int houseEvent42_2()
     {
-        return talkEvent("home_42-2");
+        return talkEvent("Home/home_42-2");
     }
     public int houseEvent43()
     {
-        return talkEvent("home_43");
+        return talkEvent("Home/home_43");
     }
     public int houseEvent43_2()
     {
-        return talkEvent("home_43-2");
+        return talkEvent("Home/home_43-2");
     }
     public int houseEvent44()
     {
-        return talkEvent("home_44");
+        return talkEvent("Home/home_44");
     }
     public int houseEvent44_2()
     {
-        return talkEvent("home_44-2");
+        return talkEvent("Home/home_44-2");
     }
     public int houseEvent45()
     {
-        return talkEvent("home_45");
+        return talkEvent("Home/home_45");
     }
     public int houseEvent45_2()
     {
-        return talkEvent("home_45-2");
+        return talkEvent("Home/home_45-2");
     }
     public int houseEvent46()
     {
-        return talkEvent("home_46");
+        return talkEvent("Home/home_46");
     }
     public int houseEvent46_2()
     {
-        return talkEvent("home_46-2");
+        return talkEvent("Home/home_46-2");
     }
     public int houseEvent47()
     {
-        return talkEvent("home_47");
+        return talkEvent("Home/home_47");
     }
     public int houseEvent47_2()
     {
-        return talkEvent("home_47-2");
+        return talkEvent("Home/home_47-2");
     }
     public int houseEvent48()
     {
-        return talkEvent("home_48");
+        return talkEvent("Home/home_48");
     }
     public int houseEvent48_2()
     {
-        return talkEvent("home_48-2");
+        return talkEvent("Home/home_48-2");
     }
-
 
     public int houseEvent49()
     {
+        if (SceneInfoManager.instance.is_shoolclear)
+        {
+            if (is_setup == false)
+            {
+                talkmanager.startTalk("Home/ed1Nearness");
+                is_setup = true;
+            }
+            if (talkmanager.talkmode == EventTalkManager.TalkMode.EVENT &&
+                     talkmanager.event_call_count == 1)
+            {
+                SoundManager.Instance.volume.SE = 0.5f;
+                SoundManager.Instance.PlaySE(2);
+                talkmanager.talkmode = EventTalkManager.TalkMode.NORMAL;
+            }
+            if (talkmanager.is_talknow)
+                return 0;
+            if (talkmanager.selectbuttonnum == 1)
+            {
+                endingPartingpoint();
+                endEventSetup();
+                return 1;
+            }
+            is_setup = false;
+            return 1;
+        }
         int rand = Random.Range(1, 6);
-        return talkEvent("home_49-" + rand.ToString());
+        return talkEvent("Home/home_49-" + rand.ToString());
     }
     public int houseEvent49_2()
     {
-        int rand = Random.Range(6, 11);
-        if (SceneInfoManager.instance.endingstatus == SceneInfoManager.EndingStatus.SCHOOL_END)
+        int rand = Random.Range(7, 11);
+        return talkEvent("Home/home_49-" + rand.ToString());
+    }
+
+    /// <summary>
+    /// ナイトメアを渡した後のイベントに変更する関数
+    /// </summary>
+    void endEventSetup()
+    {
+        eventrepository.houseEndEventSetup();
+        eventloader.eventRegister();
+    }
+    /// <summary>
+    /// どちらのエンディングか判定する関数
+    /// </summary>
+    void endingPartingpoint()
+    {
+        if (SceneInfoManager.instance.school_enemy_num <= 0)
         {
-            return talkEvent("");
+            SceneInfoManager.instance.endingstatus = SceneInfoManager.EndingStatus.GOOD_END;
         }
-        if (talkmanager.selectbuttonnum == 1)
+        else if (SceneInfoManager.instance.school_enemy_num >= 1)
         {
-            is_schoolbossend = true;
+            SceneInfoManager.instance.endingstatus = SceneInfoManager.EndingStatus.HUNGRY_END;
         }
-        return talkEvent("home_49-" + rand.ToString());
     }
 }

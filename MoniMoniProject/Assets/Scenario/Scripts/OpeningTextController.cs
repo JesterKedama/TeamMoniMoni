@@ -10,6 +10,13 @@ public class OpeningTextController : MonoBehaviour
     [SerializeField]
     Text text;
 
+    [SerializeField]
+    int font_defaultsize;
+    [SerializeField]
+    int font_bigsize;
+    int fontsize;
+    Color fontcolor;
+
     string loadtextdata;
     string loadtextpath;
     int current_read_line;
@@ -64,6 +71,35 @@ public class OpeningTextController : MonoBehaviour
                     return;
             }
 
+            if (command != null)
+            {
+                string pickoutcommand = null;
+                // サイズを変えるコマンドが来たら通る
+                if (command.IndexOf("size") != -1)
+                {
+                    pickoutcommand = commandPickOutName(command);
+                    if (pickoutcommand == "start")
+                        fontsize = font_bigsize;
+                    else if (pickoutcommand == "end")
+                        fontsize = font_defaultsize;
+                }
+
+                // 色変えるコマンドが来たら通る
+                bool is_colorchange = false;
+                Color changecolor = Color.white;
+                if (command.IndexOf("red") != -1)
+                {
+                    changecolor = Color.red;
+                    is_colorchange = true;
+                }
+                if (is_colorchange)
+                {
+                    pickoutcommand = commandPickOutName(command);
+                    if (pickoutcommand == "start")
+                        fontcolor = changecolor;
+                }
+            }
+
             if (chara_array[i] == ' ' ||
                    chara_array[i] == '\r' ||
                    chara_array[i] == '\n') continue;
@@ -105,6 +141,33 @@ public class OpeningTextController : MonoBehaviour
         return command;
     }
 
+    /// <summary>
+    /// コマンドの中からtextureの情報を引き出す関数
+    /// </summary>
+    /// <param name="command_"></param>
+    /// <returns></returns>
+    public string commandPickOutName(string command_)
+    {
+        char[] c = command_.ToCharArray();
+        char start = '\'';
+        bool is_start = false;
+        string name = null;
+
+        for (int i = 0; i < c.Length; i++)
+        {
+            if (c[i] == start)
+            {
+                is_start = !is_start;
+                continue;
+            }
+            if (is_start)
+            {
+                name += c[i];
+            }
+        }
+        return name;
+    }
+
     [SerializeField]
     AudioSource audiosource;
 
@@ -125,6 +188,11 @@ public class OpeningTextController : MonoBehaviour
         loadText();
 
         fademode = FadeMode.IN;
+
+        fontsize = font_defaultsize;
+        text.fontSize = fontsize;
+        fontcolor = Color.white;
+        audiosource.Play();
     }
 
 
@@ -140,9 +208,12 @@ public class OpeningTextController : MonoBehaviour
 
     void Update()
     {
+        text.fontSize = fontsize;
+
+
         if (fademode == FadeMode.IN)
         {
-            textalpha += 0.009f;
+            textalpha += 0.04f;
             if (Input.GetMouseButtonUp(0))
             {
                 textalpha = 1.0f;
@@ -164,6 +235,7 @@ public class OpeningTextController : MonoBehaviour
             textalpha -= 0.02f;
             if (Input.GetMouseButtonUp(0))
             {
+                fontcolor = Color.white;
                 loadText();
                 fademode = FadeMode.IN;
             }
@@ -174,11 +246,12 @@ public class OpeningTextController : MonoBehaviour
         }
         else if (fademode == FadeMode.LOAD)
         {
+            fontcolor = Color.white;
             loadText();
             fademode = FadeMode.IN;
         }
 
-
+        text.color = fontcolor;
         var color = text.color;
         color.a = textalpha;
         text.color = color;
@@ -189,11 +262,10 @@ public class OpeningTextController : MonoBehaviour
         {
             is_talknow = false;
         }
-        if (is_talknow == false)
+
+        if (SceneInfoManager.instance.is_tutorial == false)
         {
-            audiosource.Stop();
+            is_talknow = false;
         }
-
-
     }
 }

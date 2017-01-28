@@ -83,6 +83,7 @@ public class StagingController : MonoBehaviour
             fadeblack.color = color;
             return false;
         }
+        color.a = 1;
         return true;
     }
 
@@ -95,6 +96,7 @@ public class StagingController : MonoBehaviour
             fadeblack.color = color;
             return false;
         }
+        color.a = 0;
         stagingcanvas.SetActive(false);
         return true;
     }
